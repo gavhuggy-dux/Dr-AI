@@ -1,0 +1,1110 @@
+templates/drai_admin_patient.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Patient {{ patient.first_name }}</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;}
+a{color:var(--blue);text-decoration:none;font-size:13px;}
+h1{font-size:20px;margin-bottom:4px;}
+.sub{color:var(--muted);font-size:13px;margin-bottom:16px;}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px;}
+.info-item{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:10px 12px;}
+.info-item .lbl{font-size:10px;text-transform:uppercase;color:var(--muted);letter-spacing:.05em;}
+.info-item .val{font-size:14px;margin-top:2px;}
+.section-title{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 6px;}
+.consult-box{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:4px;font-size:12px;}
+.consult-box .date{color:var(--muted);font-size:10px;}
+.doc-link{display:inline-block;padding:4px 10px;background:var(--card);border:1px solid var(--border);border-radius:4px;font-size:11px;margin:2px;}
+</style></head>
+<body>
+<a href="/admin">← Admin Panel</a>
+<h1>👤 {{ patient.first_name }} {{ patient.last_name }}</h1>
+<p class="sub">{{ patient.patient_id }} · {{ patient.email }}</p>
+
+<div class="info-grid">
+    <div class="info-item"><div class="lbl">Age</div><div class="val">{{ patient.age or '?' }}</div></div>
+    <div class="info-item"><div class="lbl">Phone</div><div class="val">{{ patient.phone or '-' }}</div></div>
+    <div class="info-item"><div class="lbl">Verified</div><div class="val">{% if patient.email_verified %}✅ Email{% endif %} {% if patient.phone_verified %}📱 Phone{% endif %}</div></div>
+    <div class="info-item"><div class="lbl">Registered</div><div class="val">{{ patient.created_at[:10] }}</div></div>
+    <div class="info-item"><div class="lbl">GP</div><div class="val">{{ patient.gp_name or '-' }}</div></div>
+    <div class="info-item"><div class="lbl">Blood Type</div><div class="val">{{ patient.blood_type or '-' }}</div></div>
+    {% if patient.bmi %}<div class="info-item"><div class="lbl">BMI</div><div class="val">{{ "%.1f"|format(patient.bmi) }}</div></div>{% endif %}
+</div>
+
+<div class="section-title">Consultations ({{ consultations|length }})</div>
+{% for c in consultations %}
+<a href="/consultations/{{ c.id }}" class="consult-box" style="display:block;text-decoration:none;color:inherit;">
+    <div>{{ c.main_complaint or 'Consultation' }}</div>
+    <div class="date">{{ c.consultation_date[:16] }}{% if c.emergency_flag %} ⚠️{% endif %}</div>
+</a>
+{% else %}<div style="color:var(--muted);font-size:12px;">None</div>{% endfor %}
+
+<div class="section-title">Documents ({{ documents|length }})</div>
+{% for d in documents %}
+<a href="/documents/{{ d.id }}/download" class="doc-link">{{ d.original_name }}</a>
+{% else %}<div style="color:var(--muted);font-size:12px;">None</div>{% endfor %}
+</body></html>
+templates/drai_medical_history.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Records</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;}
+a{color:var(--blue);text-decoration:none;font-size:13px;}
+h1{font-size:20px;margin-bottom:4px;}
+.sub{color:var(--muted);font-size:13px;margin-bottom:16px;}
+h2{font-size:15px;margin:16px 0 8px;color:var(--blue);}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;}
+td{padding:6px 8px;border-bottom:1px solid var(--border);}
+.empty{color:var(--muted);padding:10px;font-size:12px;}
+.tag{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;background:var(--border);color:var(--muted);}
+.tag.active{background:rgba(126,203,107,.15);color:var(--green);}
+.tag.past{background:rgba(240,113,120,.15);color:var(--red);}
+</style></head>
+<body>
+<a href="/dashboard">← Dashboard</a>
+<h1>📋 Medical History</h1>
+<p class="sub">Your complete medical records</p>
+
+<h2>🏥 Conditions</h2>
+{% if conditions %}<table><tr><th>Condition</th><th>Diagnosed</th><th>Status</th></tr>
+{% for c in conditions %}<tr><td>{{ c.condition_name }}</td><td>{{ c.diagnosis_date or '-' }}</td><td><span class="tag {{ c.status }}">{{ c.status }}</span></td></tr>{% endfor %}
+</table>{% else %}<div class="empty">No conditions recorded</div>{% endif %}
+
+<h2>🔪 Surgeries</h2>
+{% if surgeries %}<table><tr><th>Surgery</th><th>Date</th><th>Hospital</th></tr>
+{% for s in surgeries %}<tr><td>{{ s.surgery_name }}</td><td>{{ s.date or '-' }}</td><td>{{ s.hospital or '-' }}</td></tr>{% endfor %}
+</table>{% else %}<div class="empty">No surgeries recorded</div>{% endif %}
+
+<h2>💊 Medications</h2>
+{% if medications %}<table><tr><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Status</th></tr>
+{% for m in medications %}<tr><td>{{ m.medication_name }}</td><td>{{ m.dosage or '-' }}</td><td>{{ m.frequency or '-' }}</td><td><span class="tag {{ m.status }}">{{ m.status }}</span></td></tr>{% endfor %}
+</table>{% else %}<div class="empty">No medications recorded</div>{% endif %}
+
+<h2>❤️ Vitals</h2>
+{% if vitals %}<table><tr><th>Date</th><th>BP</th><th>Pulse</th><th>Weight</th><th>Glucose</th></tr>
+{% for v in vitals %}<tr><td>{{ v.recorded_at[:10] }}</td><td>{{ v.blood_pressure_systolic or '-' }}/{{ v.blood_pressure_diastolic or '-' }}</td><td>{{ v.pulse or '-' }}</td><td>{{ v.weight or '-' }}</td><td>{{ v.blood_glucose or '-' }}</td></tr>{% endfor %}
+</table>{% else %}<div class="empty">No vitals recorded</div>{% endif %}
+
+<h2>🧪 Lab Results</h2>
+{% if labs %}<table><tr><th>Test</th><th>Date</th><th>Result</th><th>Range</th><th>Flag</th></tr>
+{% for l in labs %}<tr><td>{{ l.test_name }}</td><td>{{ l.test_date or '-' }}</td><td>{{ l.result }}</td><td style="font-size:11px;">{{ l.reference_range or '-' }}</td><td>{% if l.abnormal_flag %}<span class="tag" style="background:rgba(240,113,120,.15);color:var(--red);">⚠️</span>{% endif %}</td></tr>{% endfor %}
+</table>{% else %}<div class="empty">No lab results recorded</div>{% endif %}
+</body></html>
+templates/drai_index.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Medical Portal</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.hero{text-align:center;max-width:500px;}
+.hero h1{font-size:42px;color:var(--blue);margin-bottom:8px;}
+.hero .sub{color:var(--muted);font-size:16px;margin-bottom:30px;}
+.hero .badge{display:inline-block;background:rgba(92,207,230,.1);color:var(--blue);padding:4px 12px;border-radius:20px;font-size:12px;margin-bottom:20px;}
+.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.btn{display:inline-block;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:600;text-decoration:none;border:none;cursor:pointer;}
+.btn-primary{background:var(--blue);color:#000;}
+.btn-secondary{background:var(--card);border:1px solid var(--border);color:var(--text);}
+.btn-primary:hover,.btn-secondary:hover{opacity:.9;}
+footer{margin-top:40px;color:var(--muted);font-size:11px;}
+</style></head>
+<body>
+<div class="hero">
+    <div class="badge">🩺 Advanced Medical Intelligence</div>
+    <h1>Dr. AI</h1>
+    <p class="sub">Your personal medical diagnostic system. Secure, patient-first, evidence-based.</p>
+    <div class="btns">
+        <a href="/login" class="btn btn-primary">Patient Login</a>
+        <a href="/register" class="btn btn-secondary">Register</a>
+    </div>
+    <p style="margin-top:16px;font-size:13px;color:var(--muted);">
+        <a href="/login/admin" style="color:var(--muted);text-decoration:none;">Admin</a>
+    </p>
+    <footer>Dr. AI v1.0 · Encrypted · Confidential</footer>
+</div>
+</body></html>
+templates/drai_consultations.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Consultations</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;}
+a{color:var(--blue);text-decoration:none;font-size:13px;}
+h1{font-size:20px;margin-bottom:4px;}
+.sub{color:var(--muted);font-size:13px;margin-bottom:16px;}
+.consult-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;transition:border-color .15s;}
+.consult-row:hover{border-color:var(--blue);}
+.consult-row .complaint{font-size:14px;font-weight:500;}
+.consult-row .meta{color:var(--muted);font-size:11px;margin-top:2px;}
+.consult-row .date{color:var(--muted);font-size:11px;}
+.tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;background:var(--border);color:var(--muted);}
+.tag.emergency{background:rgba(240,113,120,.15);color:var(--red);}
+.empty{text-align:center;padding:40px;color:var(--muted);}
+</style></head>
+<body>
+<a href="/dashboard">← Dashboard</a>
+<h1>📋 Past Consultations</h1>
+<p class="sub">Your consultation history with Dr. AI</p>
+
+{% for c in consultations %}
+<a href="/consultations/{{ c.id }}" class="consult-row">
+    <div>
+        <div class="complaint">{{ c.main_complaint or 'Consultation' }}</div>
+        <div class="meta">Confidence: {{ c.confidence_level or 'N/A' }}</div>
+    </div>
+    <div style="text-align:right;">
+        <div class="date">{{ c.consultation_date[:10] }}</div>
+        {% if c.emergency_flag %}<span class="tag emergency">⚠️ Emergency</span>{% endif %}
+    </div>
+</a>
+{% else %}
+<div class="empty">No consultations yet. <a href="/consult">Start one now →</a></div>
+{% endfor %}
+</body></html>
+templates/drai_documents.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Documents</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;}
+a{color:var(--blue);text-decoration:none;font-size:13px;}
+h1{font-size:20px;margin-bottom:4px;}
+.sub{color:var(--muted);font-size:13px;margin-bottom:16px;}
+.upload-zone{background:var(--card);border:2px dashed var(--border);border-radius:10px;padding:30px;text-align:center;margin-bottom:16px;cursor:pointer;transition:border-color .2s;}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--blue);}
+.upload-zone .icon{font-size:32px;margin-bottom:8px;}
+.upload-zone p{color:var(--muted);font-size:13px;}
+.upload-zone .btn{padding:10px 24px;background:var(--blue);color:#000;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;display:inline-block;}
+.camera-btn{padding:10px 24px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:14px;cursor:pointer;margin-top:8px;display:inline-block;margin-left:8px;}
+.camera-btn:hover{border-color:var(--blue);}
+.doc-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:6px;margin-bottom:4px;font-size:13px;}
+.doc-row:hover{border-color:var(--blue);}
+.doc-row .meta{color:var(--muted);font-size:11px;}
+.empty{text-align:center;padding:30px;color:var(--muted);}
+form{display:inline;}
+.btn-sm{background:transparent;border:1px solid var(--border);color:var(--red);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;}
+.btn-sm:hover{border-color:var(--red);}
+input[type=file]{display:none;}
+</style></head>
+<body>
+<a href="/dashboard">← Dashboard</a>
+<h1>📎 Documents</h1>
+<p class="sub">Upload lab reports, scan results, images</p>
+
+<div class="upload-zone" id="dropzone" onclick="document.getElementById('file-input').click()">
+    <div class="icon">📄</div>
+    <p>Drop files here or click to upload</p>
+    <p style="font-size:11px;">PDF, Images, Text files up to 50MB</p>
+    <span class="btn">Choose File</span>
+    <span class="camera-btn" onclick="event.stopPropagation();document.getElementById('camera-input').click()">📷 Take Photo</span>
+</div>
+<input type="file" id="file-input" accept="*" multiple onchange="uploadFiles(this)">
+<input type="file" id="camera-input" accept="image/*" capture="environment" onchange="uploadCamera(this)" style="display:none">
+
+<div id="upload-status"></div>
+
+{% if documents %}
+{% for d in documents %}
+<div class="doc-row">
+    <div>
+        <div>{{ d.original_name }}</div>
+        <div class="meta">{{ d.document_type }} · {{ (d.file_size/1024)|round(1) }}KB · {{ d.uploaded_at[:10] }}</div>
+    </div>
+    <div style="display:flex;gap:6px;">
+        <a href="/documents/{{ d.id }}/download" style="font-size:11px;">⬇️</a>
+        <form method="POST" action="/documents/{{ d.id }}/delete" onsubmit="return confirm('Delete?')">
+            <button class="btn-sm">🗑️</button>
+        </form>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty">No documents yet. Upload your first one above.</div>
+{% endif %}
+
+<script>
+function uploadFiles(input) {
+    if (!input.files.length) return;
+    const status = document.getElementById('upload-status');
+    for (const file of input.files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('document_type', 'upload');
+        status.innerHTML = `⏳ Uploading ${file.name}...`;
+        fetch('/documents/upload', {method:'POST', body:formData})
+            .then(r=>r.json()).then(d=>{
+                if(d.status==='uploaded') location.reload();
+                else status.innerHTML = `❌ ${d.error}`;
+            }).catch(e=>status.innerHTML = `❌ Upload failed`);
+    }
+}
+
+function uploadCamera(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        fetch('/api/camera-upload', {method:'POST', body: e.target.result})
+            .then(r=>r.json()).then(d=>{if(d.status==='uploaded') location.reload()});
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// Drag and drop
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    const input = document.getElementById('file-input');
+    input.files = files;
+    uploadFiles(input);
+});
+</script>
+</body></html>
+templates/drai_login.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Login</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:400px;}
+.card h1{font-size:22px;text-align:center;margin-bottom:4px;}
+.card .sub{color:var(--muted);font-size:13px;text-align:center;margin-bottom:20px;}
+input{width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:15px;margin:6px 0;outline:none;}
+input:focus{border-color:var(--blue);}
+button{width:100%;padding:11px;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;}
+.btn-primary{background:var(--blue);color:#000;}
+.btn-primary:hover{opacity:.9;}
+.error{color:var(--red);text-align:center;font-size:14px;margin-top:8px;}
+a{color:var(--blue);text-decoration:none;font-size:13px;}
+.footer{text-align:center;margin-top:16px;font-size:12px;color:var(--muted);}
+.biometric-btn{width:100%;padding:11px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:14px;cursor:pointer;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.biometric-btn:hover{border-color:var(--blue);}
+</style></head>
+<body>
+<div class="card">
+    <h1>🩺 Dr. AI</h1>
+    <p class="sub">Patient Login</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="POST">
+        <input type="email" name="email" placeholder="Email address" autofocus required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit" class="btn-primary">Sign In</button>
+    </form>
+    <button class="biometric-btn" onclick="alert('Biometric login coming soon — use password for now')">🔒 Sign in with Face ID / Fingerprint</button>
+    <div class="footer">
+        <a href="/register">New patient? Register here</a><br>
+        <a href="/">← Back</a>
+    </div>
+</div>
+</body></html>
+templates/drai_register.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Register</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px;display:flex;align-items:center;justify-content:center;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:480px;}
+.card h1{font-size:22px;text-align:center;margin-bottom:4px;}
+.card .sub{color:var(--muted);font-size:13px;text-align:center;margin-bottom:20px;}
+label{display:block;color:var(--muted);font-size:11px;margin:10px 0 3px;letter-spacing:.03em;}
+input{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;outline:none;}
+input:focus{border-color:var(--blue);}
+.row{display:flex;gap:10px;}
+.row > div{flex:1;}
+button{width:100%;padding:11px;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;margin-top:12px;}
+.btn-primary{background:var(--blue);color:#000;}
+.btn-primary:hover{opacity:.9;}
+.error{color:var(--red);text-align:center;font-size:14px;margin-top:8px;}
+a{color:var(--blue);text-decoration:none;font-size:13px;}
+.footer{text-align:center;margin-top:16px;font-size:12px;color:var(--muted);}
+.hint{color:var(--muted);font-size:11px;margin-top:3px;}
+</style></head>
+<body>
+<div class="card">
+    <h1>🩺 Register with Dr. AI</h1>
+    <p class="sub">Create your secure medical profile</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="POST">
+        <div class="row">
+            <div><label>First Name</label><input type="text" name="first_name" required></div>
+            <div><label>Last Name</label><input type="text" name="last_name" required></div>
+        </div>
+        <label>Date of Birth</label><input type="date" name="date_of_birth" required>
+        <label>Email Address</label><input type="email" name="email" required>
+        <div class="hint">We'll send a verification code</div>
+        <label>Phone (optional)</label><input type="tel" name="phone" placeholder="+447700000000">
+        <div class="hint">For SMS verification — needed for full access</div>
+        <label>Password (min 8 chars)</label><input type="password" name="password" minlength="8" required>
+        <button type="submit" class="btn-primary">Create Account</button>
+    </form>
+    <div class="footer">
+        <a href="/login">Already registered? Sign in</a><br>
+        <a href="/">← Back</a>
+    </div>
+</div>
+</body></html>
+templates/drai_consultation_view.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Consultation</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;}
+a{color:var(--blue);text-decoration:none;font-size:13px;}
+h1{font-size:20px;margin-bottom:4px;}
+.date{color:var(--muted);font-size:12px;margin-bottom:16px;}
+.section{margin-bottom:16px;}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;}
+.value{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:14px;line-height:1.6;white-space:pre-wrap;}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;}
+.tag.high{background:rgba(126,203,107,.15);color:var(--green);}
+.tag.mod{background:rgba(229,184,76,.15);color:var(--yellow);}
+.tag.low{background:rgba(240,113,120,.15);color:var(--red);}
+.tag.emergency{background:rgba(240,113,120,.15);color:var(--red);}
+.back-link{margin-bottom:12px;}
+</style></head>
+<body>
+<div class="back-link"><a href="/consultations">← All Consultations</a></div>
+
+<h1>🩺 Consultation</h1>
+<div class="date">{{ c.consultation_date[:16] }}</div>
+
+{% if c.emergency_flag %}
+<div class="tag emergency" style="margin-bottom:12px;display:inline-block;">⚠️ Emergency Flagged</div>
+{% endif %}
+
+<div class="section">
+    <div class="label">Main Complaint</div>
+    <div class="value">{{ c.main_complaint or 'Not recorded' }}</div>
+</div>
+
+{% if c.consultation_summary %}
+<div class="section">
+    <div class="label">Summary</div>
+    <div class="value">{{ c.consultation_summary }}</div>
+</div>
+{% endif %}
+
+{% if c.differential_diagnosis %}
+<div class="section">
+    <div class="label">Differential Diagnosis</div>
+    <div class="value">{{ c.differential_diagnosis }}</div>
+</div>
+{% endif %}
+
+{% if c.most_likely_condition %}
+<div class="section">
+    <div class="label">Most Likely Condition</div>
+    <div class="value">{{ c.most_likely_condition }}</div>
+</div>
+{% endif %}
+
+{% if c.confidence_level %}
+<div class="section">
+    <div class="label">Confidence Level</div>
+    <div class="value">
+        <span class="tag {% if 'High' in c.confidence_level %}high{% elif 'Moderate' in c.confidence_level %}mod{% else %}low{% endif %}">
+            {{ c.confidence_level }}
+        </span>
+    </div>
+</div>
+{% endif %}
+
+{% if c.recommended_tests %}
+<div class="section">
+    <div class="label">Recommended Tests</div>
+    <div class="value">{{ c.recommended_tests }}</div>
+</div>
+{% endif %}
+
+{% if c.treatment_plan %}
+<div class="section">
+    <div class="label">Treatment Plan</div>
+    <div class="value">{{ c.treatment_plan }}</div>
+</div>
+{% endif %}
+
+{% if c.doctor_reasoning %}
+<div class="section">
+    <div class="label">Clinical Reasoning</div>
+    <div class="value">{{ c.doctor_reasoning }}</div>
+</div>
+{% endif %}
+
+{% if c.follow_up_required %}
+<div class="section">
+    <div class="label">Follow-Up</div>
+    <div class="value">{{ c.follow_up_required }}</div>
+</div>
+{% endif %}
+</body></html>
+templates/drai_profile.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Profile</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;}
+a{color:var(--blue);text-decoration:none;font-size:13px;}
+h1{font-size:20px;margin-bottom:16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:12px;max-width:600px;}
+.card h2{font-size:14px;margin-bottom:8px;color:var(--blue);}
+label{display:block;color:var(--muted);font-size:11px;margin:8px 0 2px;}
+input,select{width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;}
+input:focus{border-color:var(--blue);}
+.row{display:flex;gap:10px;}
+.row > div{flex:1;}
+button{padding:10px 20px;background:var(--blue);color:#000;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;}
+button:hover{opacity:.9;}
+.info-line{font-size:13px;margin:4px 0;color:var(--muted);}
+.tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;margin:2px;background:var(--border);color:var(--muted);}
+.success{color:var(--green);font-size:13px;margin-top:8px;}
+</style></head>
+<body>
+<a href="/dashboard">← Dashboard</a>
+<h1>👤 My Profile</h1>
+
+{% if request.method == 'POST' %}<div class="success">✅ Profile updated</div>{% endif %}
+
+<form method="POST">
+<div class="card">
+    <h2>Personal Information</h2>
+    <div class="row">
+        <div><label>First Name</label><input type="text" value="{{ patient.first_name }}" disabled style="opacity:.5"></div>
+        <div><label>Last Name</label><input type="text" value="{{ patient.last_name }}" disabled style="opacity:.5"></div>
+    </div>
+    <label>Preferred Name</label><input type="text" name="preferred_name" value="{{ patient.preferred_name or '' }}">
+    <label>Email</label><input type="email" value="{{ patient.email }}" disabled style="opacity:.5">
+    <label>Phone</label><input type="tel" name="phone" value="{{ patient.phone or '' }}">
+    <label>Address</label><input type="text" name="address" value="{{ patient.address or '' }}">
+</div>
+
+<div class="card">
+    <h2>Health Profile</h2>
+    <div class="row">
+        <div><label>Height (cm)</label><input type="number" name="height" value="{{ patient.height or '' }}" step="0.1"></div>
+        <div><label>Weight (kg)</label><input type="number" name="weight" value="{{ patient.weight or '' }}" step="0.1"></div>
+    </div>
+    {% if patient.bmi %}<div class="info-line">BMI: {{ "%.1f"|format(patient.bmi) }}</div>{% endif %}
+    <label>Smoking Status</label>
+    <select name="smoking_status">
+        <option value="">—</option>
+        <option value="never" {% if patient.smoking_status == 'never' %}selected{% endif %}>Never</option>
+        <option value="former" {% if patient.smoking_status == 'former' %}selected{% endif %}>Former</option>
+        <option value="current" {% if patient.smoking_status == 'current' %}selected{% endif %}>Current</option>
+    </select>
+    <label>Alcohol Use</label>
+    <select name="alcohol_use">
+        <option value="">—</option>
+        <option value="none" {% if patient.alcohol_use == 'none' %}selected{% endif %}>None</option>
+        <option value="occasional" {% if patient.alcohol_use == 'occasional' %}selected{% endif %}>Occasional</option>
+        <option value="moderate" {% if patient.alcohol_use == 'moderate' %}selected{% endif %}>Moderate</option>
+        <option value="heavy" {% if patient.alcohol_use == 'heavy' %}selected{% endif %}>Heavy</option>
+    </select>
+    <label>Activity Level</label>
+    <select name="activity_level">
+        <option value="">—</option>
+        <option value="sedentary" {% if patient.activity_level == 'sedentary' %}selected{% endif %}>Sedentary</option>
+        <option value="light" {% if patient.activity_level == 'light' %}selected{% endif %}>Light</option>
+        <option value="moderate" {% if patient.activity_level == 'moderate' %}selected{% endif %}>Moderate</option>
+        <option value="active" {% if patient.activity_level == 'active' %}selected{% endif %}>Active</option>
+    </select>
+    <label>Blood Type</label>
+    <select name="blood_type">
+        <option value="">—</option>
+        <option value="A+" {% if patient.blood_type == 'A+' %}selected{% endif %}>A+</option>
+        <option value="A-" {% if patient.blood_type == 'A-' %}selected{% endif %}>A-</option>
+        <option value="B+" {% if patient.blood_type == 'B+' %}selected{% endif %}>B+</option>
+        <option value="B-" {% if patient.blood_type == 'B-' %}selected{% endif %}>B-</option>
+        <option value="AB+" {% if patient.blood_type == 'AB+' %}selected{% endif %}>AB+</option>
+        <option value="AB-" {% if patient.blood_type == 'AB-' %}selected{% endif %}>AB-</option>
+        <option value="O+" {% if patient.blood_type == 'O+' %}selected{% endif %}>O+</option>
+        <option value="O-" {% if patient.blood_type == 'O-' %}selected{% endif %}>O-</option>
+    </select>
+</div>
+
+<div class="card">
+    <h2>GP / Doctor Details</h2>
+    <label>GP Name</label><input type="text" name="gp_name" value="{{ patient.gp_name or '' }}">
+    <label>GP Address</label><input type="text" name="gp_address" value="{{ patient.gp_address or '' }}">
+    <div class="row">
+        <div><label>GP Phone</label><input type="tel" name="gp_phone" value="{{ patient.gp_phone or '' }}"></div>
+        <div><label>GP Email</label><input type="email" name="gp_email" value="{{ patient.gp_email or '' }}"></div>
+    </div>
+</div>
+
+<button type="submit">💾 Save Profile</button>
+</form>
+
+<div class="card" style="margin-top:12px;">
+    <h2>Known Conditions</h2>
+    {% for c in conditions %}<div class="info-line">• {{ c.condition_name }} {% if c.status %}<span class="tag">{{ c.status }}</span>{% endif %}</div>{% else %}<div class="info-line" style="color:var(--muted)">None recorded</div>{% endfor %}
+</div>
+
+<div class="card">
+    <h2>Allergies</h2>
+    {% for a in allergies %}<div class="info-line">• {{ a.allergen }} — {{ a.reaction }} <span class="tag">{{ a.severity }}</span></div>{% else %}<div class="info-line" style="color:var(--muted)">None recorded</div>{% endfor %}
+</div>
+</body></html>
+templates/drai_dashboard.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Dashboard</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;--yellow:#e5b84c;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;}
+a{text-decoration:none;color:inherit;}
+.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+.header h1{font-size:20px;}
+.header .nav{display:flex;gap:6px;flex-wrap:wrap;}
+.btn{display:inline-block;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;text-decoration:none;}
+.btn-sm{background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 10px;font-size:11px;}
+.btn-sm:hover{border-color:var(--blue);}
+.btn-primary{background:var(--blue);color:#000;padding:10px 18px;font-size:14px;}
+.btn-primary:hover{opacity:.9;}
+.btn-green{background:var(--green);color:#000;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;display:block;}
+.card:hover{border-color:var(--blue);}
+.card .icon{font-size:20px;margin-bottom:4px;}
+.card h2{font-size:13px;font-weight:600;}
+.card p{color:var(--muted);font-size:11px;}
+.welcome{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px;}
+.welcome h2{font-size:18px;margin-bottom:4px;}
+.welcome p{color:var(--muted);font-size:13px;}
+.welcome .info{display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--muted);}
+.section-title{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 6px;}
+.consult-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;margin-bottom:3px;font-size:12px;}
+.consult-row:hover{border-color:var(--blue);}
+.med-tag{font-size:10px;background:var(--bg);color:var(--muted);padding:2px 6px;border-radius:3px;}
+.empty{color:var(--muted);font-size:13px;padding:16px;text-align:center;}
+</style></head>
+<body>
+<div class="header">
+    <h1>🩺 Dr. AI</h1>
+    <div class="nav">
+        <a href="/profile" class="btn btn-sm">👤 Profile</a>
+        <a href="/medical-history" class="btn btn-sm">📋 Records</a>
+        <a href="/documents" class="btn btn-sm">📎 Documents</a>
+        <a href="/logout" class="btn btn-sm">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="welcome">
+    <h2>👋 Hello, {{ patient.preferred_name or patient.first_name }}</h2>
+    <p>Your personal medical intelligence system</p>
+    <div class="info">
+        <span>🆔 {{ patient.patient_id }}</span>
+        <span>📅 {{ patient.date_of_birth }}</span>
+        {% if patient.email_verified %}<span>✅ Email verified</span>{% endif %}
+        {% if patient.phone_verified %}<span>✅ Phone verified</span>{% endif %}
+    </div>
+</div>
+
+<div class="grid">
+    <a href="/consult" class="card">
+        <div class="icon">🩺</div>
+        <h2>New Consultation</h2>
+        <p>Talk to Dr. AI about your symptoms</p>
+    </a>
+    <a href="/consultations" class="card">
+        <div class="icon">📋</div>
+        <h2>Past Consultations</h2>
+        <p>{{ consultations|length }} on record</p>
+    </a>
+    <a href="/medical-history" class="card">
+        <div class="icon">🏥</div>
+        <h2>Medical History</h2>
+        <p>Conditions · Meds · Labs · Vitals</p>
+    </a>
+    <a href="/documents" class="card">
+        <div class="icon">📎</div>
+        <h2>Documents</h2>
+        <p>Uploads · Scans · Lab reports</p>
+    </a>
+</div>
+
+{% if consultations %}
+<div class="section-title">Recent Consultations</div>
+{% for c in consultations %}
+<a href="/consultations/{{ c.id }}" class="consult-row">
+    <span>{{ c.main_complaint[:60] or 'Consultation' }}</span>
+    <span style="color:var(--muted);font-size:11px;">{{ c.consultation_date[:10] }}</span>
+</a>
+{% endfor %}
+{% endif %}
+
+{% if medications %}
+<div class="section-title">Current Medications</div>
+<div style="display:flex;flex-wrap:wrap;gap:4px;">
+{% for m in medications %}
+<span class="med-tag">{{ m.medication_name }} ({{ m.dosage }})</span>
+{% endfor %}
+</div>
+{% endif %}
+
+<div style="margin-top:20px;font-size:11px;color:var(--muted);text-align:center;">
+    Dr. AI v1.0 · Secure · Confidential
+</div>
+</body></html>
+templates/drai_verify.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Verify</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:440px;}
+.card h1{font-size:20px;text-align:center;margin-bottom:4px;}
+.card .sub{color:var(--muted);font-size:13px;text-align:center;margin-bottom:20px;}
+label{display:block;color:var(--muted);font-size:12px;margin:12px 0 4px;}
+input{width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:18px;text-align:center;letter-spacing:6px;outline:none;}
+input:focus{border-color:var(--blue);}
+button{width:100%;padding:11px;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;margin-top:12px;}
+.btn-primary{background:var(--blue);color:#000;}
+.btn-primary:hover{opacity:.9;}
+.error{color:var(--red);text-align:center;font-size:14px;margin-top:8px;}
+.info{color:var(--muted);font-size:12px;text-align:center;margin:10px 0;}
+</style></head>
+<body>
+<div class="card">
+    <h1>✅ Verify Your Identity</h1>
+    <p class="sub">Check your email and phone for verification codes</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    
+    <div class="info">📧 Code sent to {{ patient.email|default('your email') }}</div>
+    {% if patient.phone %}<div class="info">📱 Code sent to {{ patient.phone }}</div>{% endif %}
+    
+    <form method="POST">
+        <label>Email Verification Code</label>
+        <input type="text" name="email_code" placeholder="000000" maxlength="6" autofocus
+               oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        
+        {% if patient.phone %}
+        <label>Phone Verification Code</label>
+        <input type="text" name="phone_code" placeholder="000000" maxlength="6"
+               oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        {% endif %}
+        
+        <button type="submit" class="btn-primary">Verify</button>
+    </form>
+</div>
+</body></html>
+templates/drai_admin.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Admin</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;}
+a{color:var(--blue);text-decoration:none;font-size:13px;}
+h1{font-size:20px;margin-bottom:4px;}
+.sub{color:var(--muted);font-size:13px;margin-bottom:16px;}
+.stats{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 20px;text-align:center;}
+.stat .num{font-size:22px;font-weight:700;color:var(--blue);}
+.stat .label{font-size:11px;color:var(--muted);}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;}
+td{padding:8px 10px;border-bottom:1px solid var(--border);}
+tr:hover td{background:rgba(92,207,230,.03);}
+.tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;background:var(--border);color:var(--muted);}
+</style></head>
+<body>
+<a href="/dashboard">← Dashboard</a> · <a href="/logout">Logout</a>
+<h1>🩺 Dr. AI — Admin Panel</h1>
+<p class="sub">Patient management overview</p>
+
+<div class="stats">
+    <div class="stat"><div class="num">{{ total_patients }}</div><div class="label">Patients</div></div>
+    <div class="stat"><div class="num">{{ total_consultations }}</div><div class="label">Consultations</div></div>
+</div>
+
+{% if patients %}
+<div style="overflow-x:auto;">
+<table>
+<thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Email</th><th>Phone</th><th>Registered</th><th></th></tr></thead>
+<tbody>
+{% for p in patients %}
+<tr>
+    <td style="font-family:monospace;font-size:11px;">{{ p.patient_id }}</td>
+    <td>{{ p.first_name }} {{ p.last_name }}</td>
+    <td>{{ p.age or '?' }}</td>
+    <td>{{ p.email }}</td>
+    <td>{{ p.phone or '-' }}</td>
+    <td style="font-size:11px;color:var(--muted);">{{ p.created_at[:10] }}</td>
+    <td><a href="/admin/patient/{{ p.patient_id }}" style="font-size:11px;">View →</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div style="color:var(--muted);text-align:center;padding:40px;">No patients registered yet</div>
+{% endif %}
+</body></html>
+templates/drai_consult.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Consultation</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6;--yellow:#e5b84c;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;}
+.header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.header h1{font-size:18px;}
+.header a{color:var(--blue);text-decoration:none;font-size:12px;}
+.chat-area{flex:1;overflow-y:auto;padding:16px;}
+.msg{max-width:85%;margin-bottom:12px;padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.5;}
+.msg-doctor{background:var(--card);border:1px solid var(--border);margin-right:auto;border-bottom-left-radius:4px;}
+.msg-patient{background:rgba(92,207,230,.12);border:1px solid rgba(92,207,230,.2);margin-left:auto;border-bottom-right-radius:4px;}
+.msg .sender{font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600;}
+.msg-doctor .sender{color:var(--blue);}
+.msg-patient .sender{color:var(--green);}
+.msg .time{font-size:10px;color:var(--muted);margin-top:6px;}
+.input-area{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;}
+.input-area textarea{flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;resize:none;outline:none;min-height:44px;max-height:120px;font-family:inherit;}
+.input-area textarea:focus{border-color:var(--blue);}
+.input-area button{padding:10px 20px;background:var(--blue);color:#000;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.input-area button:hover{opacity:.9;}
+.typing{color:var(--muted);font-size:12px;padding:8px 16px;display:none;}
+.typing.active{display:block;}
+.steps{display:flex;gap:4px;padding:8px 16px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
+.step{padding:4px 10px;border-radius:12px;font-size:10px;background:var(--card);border:1px solid var(--border);color:var(--muted);white-space:nowrap;}
+.step.active{background:rgba(92,207,230,.15);border-color:var(--blue);color:var(--blue);}
+.step.done{background:rgba(126,203,107,.15);border-color:var(--green);color:var(--green);}
+.empty-chat{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);text-align:center;padding:20px;}
+.empty-chat .icon{font-size:48px;margin-bottom:12px;}
+.empty-chat h2{font-size:18px;color:var(--text);margin-bottom:4px;}
+.empty-chat p{font-size:13px;}
+.camera-btn{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;color:var(--text);font-size:13px;display:none;}
+.camera-btn:hover{border-color:var(--blue);}
+.camera-btn.active{display:flex;align-items:center;gap:6px;}
+</style></head>
+<body>
+<div class="header">
+    <h1>🩺 Dr. AI — Consultation</h1>
+    <a href="/dashboard">← Dashboard</a>
+</div>
+
+<div class="steps" id="steps">
+    <span class="step active" data-step="1">1. Main Complaint</span>
+    <span class="step" data-step="2">2. Symptoms</span>
+    <span class="step" data-step="3">3. Medical Context</span>
+    <span class="step" data-step="4">4. Risk Assessment</span>
+    <span class="step" data-step="5">5. Diagnosis</span>
+    <span class="step" data-step="6">6. Investigation Plan</span>
+    <span class="step" data-step="7">7. Clinical Reasoning</span>
+    <span class="step" data-step="8">8. Action Plan</span>
+</div>
+
+<div class="chat-area" id="chat">
+    <div class="empty-chat" id="empty-state">
+        <div class="icon">🩺</div>
+        <h2>How can I help you today?</h2>
+        <p>Describe your symptoms or main health concern below</p>
+    </div>
+</div>
+
+<div class="typing" id="typing">Dr. AI is thinking...</div>
+
+<div class="input-area" id="input-area">
+    <button class="camera-btn" id="camera-btn" onclick="openCamera()">
+        📷 Scan
+    </button>
+    <textarea id="user-input" placeholder="Describe your symptoms..." rows="1"
+        oninput="autoResize(this)" onkeydown="if(event.key=='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+    <button onclick="sendMessage()">Send</button>
+</div>
+
+<!-- Hidden file input for camera -->
+<input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="uploadPhoto(this)">
+
+<script>
+const chat = document.getElementById('chat');
+const input = document.getElementById('user-input');
+const typing = document.getElementById('typing');
+const emptyState = document.getElementById('empty-state');
+const cameraBtn = document.getElementById('camera-btn');
+const steps = document.querySelectorAll('.step');
+
+// Show camera button on phone
+if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+    cameraBtn.classList.add('active');
+}
+
+let consultationData = {};
+let currentStep = 1;
+
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+}
+
+function addMessage(text, sender) {
+    emptyState?.remove();
+    const div = document.createElement('div');
+    div.className = `msg msg-${sender}`;
+    const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    div.innerHTML = `<div class="sender">${sender === 'doctor' ? '👩‍⚕️ Dr. AI' : '👤 You'}</div>
+        <div>${text}</div>
+        <div class="time">${time}</div>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function setStep(n) {
+    currentStep = n;
+    steps.forEach(s => {
+        s.classList.remove('active', 'done');
+        if (parseInt(s.dataset.step) < n) s.classList.add('done');
+        if (parseInt(s.dataset.step) === n) s.classList.add('active');
+    });
+}
+
+async function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    
+    addMessage(text, 'patient');
+    input.value = '';
+    input.style.height = 'auto';
+    typing.classList.add('active');
+    
+    // Simulate Dr. AI response
+    setTimeout(() => {
+        typing.classList.remove('active');
+        
+        let response = '';
+        if (currentStep === 1) {
+            response = `Thank you for telling me about your concern. I'd like to understand more.
+
+**Could you please tell me:**
+- When did this first start?
+- How severe is it on a scale of 1-10?
+- Has it been getting worse, staying the same, or improving?
+- Is there anything that makes it better or worse?`;
+            setStep(2);
+        } else if (currentStep === 2) {
+            response = `Thank you. Let me ask some additional questions to build a clearer picture.
+
+**Associated symptoms:**
+- Have you noticed any other symptoms alongside this?
+- Any fever, fatigue, or changes in appetite/sleep?
+
+**Timeline:**
+- How long do episodes typically last?
+- How often do they occur?
+
+**Impact:**
+- Is this affecting your daily activities or work?`;
+            setStep(3);
+        } else if (currentStep === 3) {
+            response = `Let me review your medical context.
+
+**I need to check:**
+- Do you have any existing medical conditions?
+- Are you currently taking any medications or supplements?
+- Have you had any recent tests or investigations?
+- Is there any family history of similar conditions?
+- Any allergies I should know about?`;
+            setStep(4);
+        } else if (currentStep === 4) {
+            // Check for red flags
+            const emergency = ['chest pain','breathless','stroke','bleeding','severe','unconscious','paralysis','suicidal'];
+            const hasEmergency = emergency.some(e => text.toLowerCase().includes(e));
+            
+            if (hasEmergency) {
+                response = `⚠️ **IMPORTANT — Please seek urgent medical attention.**
+
+Based on what you've described, this could be a medical emergency. Please call emergency services (999 in the UK) or go to your nearest A&E department immediately.
+
+Do not wait. Your safety is the priority.`;
+                setStep(8);
+            } else {
+                response = `Good, I don't see any immediate emergency signs based on what you've described. Let me proceed with my analysis.
+
+**Based on the information gathered so far, I'll now work through the differential diagnosis.**`;
+                setStep(5);
+            }
+        } else if (currentStep === 5) {
+            response = `## Differential Diagnosis
+
+Based on my analysis, here are the key possibilities to consider:
+
+**Most Likely:**
+- [Condition A] — the symptom profile matches most closely
+- [Condition B] — also possible given the presentation
+
+**Requires Further Investigation:**
+- [Condition C] — less likely but important to rule out
+
+**Dangerous Conditions To Rule Out:**
+- None identified at this stage, but monitoring advised
+
+**Confidence Level: Moderate** — More information from tests would improve accuracy.`;
+            setStep(6);
+        } else if (currentStep === 6) {
+            response = `## Recommended Investigations
+
+To confirm the diagnosis and rule out other possibilities, I recommend:
+
+**Blood Tests:**
+- Full blood count
+- Inflammatory markers (CRP, ESR)
+- [Relevant specific tests]
+
+**Monitoring:**
+- Track your symptoms daily
+- Note any triggers or patterns
+
+**Referrals:**
+- Consider speaking with your GP
+- Specialist referral if symptoms persist
+
+Would you like me to create a summary of this consultation for your records?`;
+            setStep(7);
+        } else if (currentStep === 7) {
+            response = `## Clinical Reasoning
+
+Let me explain my thinking process.
+
+**Why [Condition A] fits:**
+Your described symptoms align with the typical presentation based on onset, duration, and associated features.
+
+**Why it may not fit:**
+Some aspects of your presentation are atypical, which is why I recommend further investigation.
+
+**What the tests will tell us:**
+The recommended tests will help confirm or exclude the leading possibilities and guide treatment.
+
+**Next Steps:**
+1. Monitor your symptoms
+2. Arrange the recommended tests
+3. Follow up with a GP if needed
+4. Come back for a follow-up consultation with the results
+
+Your health and safety are my priority. ❤️`;
+            setStep(8);
+            
+            // Offer to save
+            setTimeout(() => {
+                addMessage('**Would you like me to save this consultation to your medical record?** Reply "yes" or "save" to confirm.', 'doctor');
+            }, 1000);
+        } else if (currentStep === 8) {
+            if (text.toLowerCase().match(/^(yes|save|sure|ok)/)) {
+                response = `✅ **Consultation saved to your medical record.**
+
+**Summary:**
+- Main complaint documented
+- Symptoms assessed
+- Risk evaluated
+- Recommendations provided
+
+You can view this consultation anytime in your **Past Consultations** page.
+
+**Follow-up:** I recommend checking back if your symptoms change or worsen, or once you've had the recommended tests.
+
+Take care of yourself. 💙`;
+                
+                // Save to backend
+                fetch('/api/consult', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        main_complaint: 'Auto-saved consultation',
+                        summary: 'Consultation completed via Dr. AI chat interface',
+                        differential: 'Awaiting full analysis',
+                        most_likely: 'To be determined',
+                        confidence: 'Moderate',
+                        follow_up: 'Recommended if symptoms persist',
+                    })
+                });
+            } else {
+                response = `Understood. You can always come back for another consultation whenever you need.
+
+Your health records remain private and secure. If you change your mind, you can save the consultation from the Past Consultations page.
+
+Take care! 💙`;
+            }
+        }
+        
+        addMessage(response, 'doctor');
+    }, 1500 + Math.random() * 1000);
+}
+
+function openCamera() {
+    const cam = document.getElementById('camera-input');
+    cam.click();
+}
+
+function uploadPhoto(input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const file = input.files[0];
+    addMessage(`📷 Photo uploaded: ${file.name}`, 'patient');
+    
+    // Upload to server
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('document_type', 'scan');
+    formData.append('description', 'Camera scan from consultation');
+    
+    fetch('/documents/upload', {method: 'POST', body: formData})
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'uploaded') {
+                addMessage(`✅ Photo saved to your documents. I can see this is a ${file.type} image. In a full clinical setting, I would analyze this image for relevant medical findings.`, 'doctor');
+            }
+        })
+        .catch(() => addMessage('⚠️ Could not save photo. Please try again.', 'doctor'));
+}
+
+// Initial greeting
+setTimeout(() => {
+    addMessage(`👩‍⚕️ Hello, I'm **Dr. AI**. I'm here to help you understand your symptoms and guide you toward the right care.
+
+Please describe your main health concern in as much detail as you can. What's been bothering you?`, 'doctor');
+    emptyState?.remove();
+}, 800);
+</script>
+</body></html>
+templates/drai_admin_login.html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI — Admin Login</title>
+<style>:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--red:#f07178;--blue:#5ccfe6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:360px;text-align:center;}
+.card h1{font-size:22px;margin-bottom:4px;}
+.card .sub{color:var(--muted);font-size:13px;margin-bottom:20px;}
+input{width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:15px;margin:6px 0;outline:none;}
+input:focus{border-color:var(--blue);}
+button{width:100%;padding:11px;background:var(--blue);color:#000;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;}
+.error{color:var(--red);font-size:14px;margin-top:8px;}
+a{color:var(--blue);text-decoration:none;font-size:13px;}
+</style></head>
+<body>
+<div class="card">
+    <h1>🔐 Admin Access</h1>
+    <p class="sub">Dr. AI Administrator Panel</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="POST">
+        <input type="password" name="password" placeholder="Admin password" autofocus>
+        <button type="submit">Login</button>
+    </form>
+    <p style="margin-top:12px;font-size:12px;color:var(--muted);"><a href="/">← Back</a></p>
+</div>
+</body></html>
