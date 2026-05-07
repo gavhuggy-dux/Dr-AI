@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Dr. AI - Appointments & Patients</title>
+<style>
+:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--yellow:#e5b84c;--red:#f07178;--blue:#5ccfe6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;line-height:1.5}
+a{color:var(--blue);text-decoration:none}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:20px}
+header h1{font-size:20px;color:var(--blue)}
+header .nav{display:flex;gap:10px;font-size:13px;flex-wrap:wrap}
+header .nav a{padding:4px 10px;border-radius:4px;background:var(--card);border:1px solid var(--border)}
+header .nav a:hover{border-color:var(--blue);text-decoration:none}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.card h2{font-size:15px;margin-bottom:12px;color:var(--blue)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase}
+tr:hover{background:rgba(92,207,230,.05)}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px}
+.badge-green{background:rgba(126,203,107,.15);color:var(--green)}
+.badge-red{background:rgba(240,113,120,.15);color:var(--red)}
+.badge-blue{background:rgba(92,207,230,.15);color:var(--blue)}
+.badge-yellow{background:rgba(229,184,76,.15);color:var(--yellow)}
+.btn{display:inline-block;padding:6px 14px;border-radius:5px;font-size:12px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer}
+.btn:hover{border-color:var(--blue)}
+.btn-primary{background:var(--blue);color:var(--bg);border-color:var(--blue);font-weight:600}
+.btn-sm{padding:3px 8px;font-size:11px}
+.empty{text-align:center;color:var(--muted);padding:30px}
+.filter-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.filter-bar a{padding:4px 10px;border-radius:4px;background:var(--bg);border:1px solid var(--border);font-size:12px;color:var(--text)}
+.filter-bar a.active{border-color:var(--blue);color:var(--blue)}
+.filter-bar a:hover{border-color:var(--blue);text-decoration:none}
+@media(max-width:600px){header .nav{font-size:11px;gap:4px}}
+</style>
+</head>
+<body>
+<header>
+    <h1>📅 Appointments & Patients</h1>
+    <div class="nav">
+        <a href="/admin">Dashboard</a><a href="/admin/packages">Packages</a><a href="/admin/ads">Ads</a>
+        <a href="/admin/tickers">Tickers</a><a href="/admin/appointments">Appts</a>
+        <a href="/admin/settings">Settings</a><a href="/admin/patients">Patients</a><a href="/logout">Logout</a>
+    </div>
+</header>
+
+{% if page == 'appointments' %}
+<div class="card">
+    <h2>All Appointments</h2>
+    <div class="filter-bar">
+        <a href="/admin/appointments" class="{% if not status_filter %}active{% endif %}">All</a>
+        <a href="/admin/appointments?status=pending" class="{% if status_filter=='pending' %}active{% endif %}">Pending</a>
+        <a href="/admin/appointments?status=in_progress" class="{% if status_filter=='in_progress' %}active{% endif %}">In Progress</a>
+        <a href="/admin/appointments?status=completed" class="{% if status_filter=='completed' %}active{% endif %}">Completed</a>
+        <a href="/admin/appointments?status=cancelled" class="{% if status_filter=='cancelled' %}active{% endif %}">Cancelled</a>
+    </div>
+    {% if appointments %}
+    <table>
+        <tr><th>ID</th><th>Patient</th><th>Complaint</th><th>Duration</th><th>Cost</th><th>Status</th><th>Booked</th></tr>
+        {% for a in appointments %}
+        <tr>
+            <td style="font-size:11px;color:var(--muted)">#{{ a.id }}</td>
+            <td>{{ a.first_name }} {{ a.last_name }}</td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.main_complaint or '-' }}</td>
+            <td>{{ a.duration_minutes }}min</td>
+            <td><span class="badge badge-blue">{{ a.credits_cost }}cr</span></td>
+            <td><span class="badge {% if a.status=='completed' %}badge-green{% elif a.status=='in_progress' %}badge-yellow{% elif a.status=='cancelled' %}badge-red{% else %}badge-blue{% endif %}">{{ a.status }}</span></td>
+            <td style="font-size:11px;color:var(--muted)">{{ a.booked_at[:16] if a.booked_at else '-' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}<div class="empty">No appointments found</div>{% endif %}
+</div>
+{% elif page == 'patients' %}
+<div class="card">
+    <h2>All Patients</h2>
+    {% if patients %}
+    <table>
+        <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Credits</th><th>Onboarding</th><th>Joined</th></tr>
+        {% for p in patients %}
+        <tr>
+            <td style="font-size:10px;color:var(--muted)">{{ p.patient_id[:16] }}</td>
+            <td>{{ p.first_name }} {{ p.last_name }}</td>
+            <td>{{ p.email }}</td>
+            <td>{{ p.phone or '-' }}</td>
+            <td><span class="badge badge-blue">{{ p.credits or 0 }}</span></td>
+            <td>{% if p.onboarding_progress is defined %}<span class="badge {% if p.onboarding_progress > 60 %}badge-green{% elif p.onboarding_progress > 30 %}badge-yellow{% else %}badge-red{% endif %}">{{ p.onboarding_progress }}%</span>{% else %}-{% endif %}</td>
+            <td style="font-size:11px;color:var(--muted)">{{ p.created_at[:10] if p.created_at else '' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}<div class="empty">No patients yet</div>{% endif %}
+</div>
+{% endif %}
+</body>
+</html>

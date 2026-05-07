@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Dr. AI - Credit Packages</title>
+<style>
+:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--yellow:#e5b84c;--red:#f07178;--blue:#5ccfe6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;line-height:1.5}
+a{color:var(--blue);text-decoration:none}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:20px}
+header h1{font-size:20px;color:var(--blue)}
+header .nav{display:flex;gap:10px;font-size:13px}
+header .nav a{padding:4px 10px;border-radius:4px;background:var(--card);border:1px solid var(--border)}
+header .nav a:hover{border-color:var(--blue);text-decoration:none}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px}
+.card h2{font-size:15px;margin-bottom:12px;color:var(--blue)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase}
+tr:hover{background:rgba(92,207,230,.05)}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px}
+.badge-green{background:rgba(126,203,107,.15);color:var(--green)}
+.badge-red{background:rgba(240,113,120,.15);color:var(--red)}
+.btn{display:inline-block;padding:6px 14px;border-radius:5px;font-size:12px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer}
+.btn:hover{border-color:var(--blue)}
+.btn-primary{background:var(--blue);color:var(--bg);border-color:var(--blue);font-weight:600}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-danger{background:var(--red);color:#fff;border-color:var(--red)}
+input,select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:4px;font-size:13px;width:100%}
+input:focus{outline:none;border-color:var(--blue)}
+.form-group{margin-bottom:10px}
+.form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.flash{background:rgba(126,203,107,.1);border:1px solid var(--green);color:var(--green);padding:8px 12px;border-radius:4px;margin-bottom:12px;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+    <h1>💳 Credit Packages</h1>
+    <div class="nav">
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/packages">Packages</a>
+        <a href="/admin/ads">Ads</a>
+        <a href="/admin/tickers">Tickers</a>
+        <a href="/admin/appointments">Appts</a>
+        <a href="/admin/settings">Settings</a>
+        <a href="/admin/patients">Patients</a>
+        <a href="/logout">Logout</a>
+    </div>
+</header>
+
+{% if msg %}<div class="flash">{{ msg }}</div>{% endif %}
+
+<div class="card">
+    <h2>Add Package</h2>
+    <form method="post">
+        <div class="form-row">
+            <div class="form-group"><label>Name</label><input name="name" placeholder="e.g. Starter Pack" required></div>
+            <div class="form-group"><label>Price (pence)</label><input name="price_pence" type="number" placeholder="e.g. 500 = 5 GBP" required></div>
+            <div class="form-group"><label>Credits</label><input name="credits" type="number" placeholder="e.g. 5" required></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:6px">Add Package</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Current Packages</h2>
+    {% if packages %}
+    <table>
+        <tr><th>Name</th><th>Price</th><th>Credits</th><th>Active</th><th></th></tr>
+        {% for p in packages %}
+        <tr>
+            <td>{{ p.name }}</td><td>{{ p.price_pence }}p ({{ "%.2f"|format(p.price_pence/100) }} GBP)</td>
+            <td>{{ p.credits }}</td>
+            <td><span class="badge {% if p.active %}badge-green{% else %}badge-red{% endif %}">{{ 'Active' if p.active else 'Inactive' }}</span></td>
+            <td>
+                <form method="post" action="/admin/packages/toggle/{{ p.id }}" style="display:inline">
+                    <button class="btn btn-sm">{{ 'Deactivate' if p.active else 'Activate' }}</button>
+                </form>
+                <form method="post" action="/admin/packages/delete/{{ p.id }}" style="display:inline" onsubmit="return confirm('Delete?')">
+                    <button class="btn btn-sm btn-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}<div class="empty">No packages</div>{% endif %}
+</div>
+</body>
+</html>

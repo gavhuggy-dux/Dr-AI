@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dr. AI Admin</title>
+<style>
+:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--yellow:#e5b84c;--red:#f07178;--blue:#5ccfe6;--orange:#ff8c42}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);padding:16px;line-height:1.5;min-height:100vh}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:20px}
+header h1{font-size:20px;color:var(--blue)}
+header .nav{display:flex;gap:10px;font-size:13px}
+header .nav a{padding:4px 10px;border-radius:4px;background:var(--card);border:1px solid var(--border)}
+header .nav a:hover{border-color:var(--blue);text-decoration:none}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:20px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px}
+.stat-card .num{font-size:24px;font-weight:700;color:var(--blue)}
+.stat-card .label{font-size:11px;color:var(--muted);margin-top:2px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px}
+.card h2{font-size:15px;margin-bottom:12px;color:var(--blue)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+tr:hover{background:rgba(92,207,230,.05)}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px}
+.badge-green{background:rgba(126,203,107,.15);color:var(--green)}
+.badge-yellow{background:rgba(229,184,76,.15);color:var(--yellow)}
+.badge-red{background:rgba(240,113,120,.15);color:var(--red)}
+.badge-blue{background:rgba(92,207,230,.15);color:var(--blue)}
+.btn{display:inline-block;padding:6px 14px;border-radius:5px;font-size:12px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer}
+.btn:hover{border-color:var(--blue)}
+.btn-primary{background:var(--blue);color:var(--bg);border-color:var(--blue);font-weight:600}
+.btn-primary:hover{opacity:.9}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-danger{background:var(--red);color:#fff;border-color:var(--red)}
+input,select,textarea{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:4px;font-size:13px;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+.form-group{margin-bottom:10px}
+.form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.grid-2,.form-row{grid-template-columns:1fr}}
+.empty{text-align:center;color:var(--muted);padding:30px;font-size:14px}
+.flash{background:rgba(126,203,107,.1);border:1px solid var(--green);color:var(--green);padding:8px 12px;border-radius:4px;margin-bottom:12px;font-size:13px}
+.flash.error{background:rgba(240,113,120,.1);border-color:var(--red);color:var(--red)}
+.modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center}
+.modal.active{display:flex}
+.modal-content{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;width:90%;max-width:500px;max-height:80vh;overflow-y:auto}
+.modal-content h3{margin-bottom:12px;color:var(--blue)}
+.close{float:right;cursor:pointer;font-size:18px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+    <h1>🩺 Dr. AI Admin</h1>
+    <div class="nav">
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/packages">Packages</a>
+        <a href="/admin/ads">Ads</a>
+        <a href="/admin/tickers">Tickers</a>
+        <a href="/admin/appointments">Appointments</a>
+        <a href="/admin/settings">Settings</a>
+        <a href="/admin/patients">Patients</a>
+        <a href="/logout">Logout</a>
+    </div>
+</header>
+
+<div class="stats">
+    <div class="stat-card"><div class="num">{{ stats.patients }}</div><div class="label">Patients</div></div>
+    <div class="stat-card"><div class="num">{{ stats.consultations }}</div><div class="label">Consultations</div></div>
+    <div class="stat-card"><div class="num">{{ stats.appointments }}</div><div class="label">Appointments</div></div>
+    <div class="stat-card"><div class="num">{{ stats.ads }}</div><div class="label">Active Ads</div></div>
+    <div class="stat-card"><div class="num">{{ stats.documents }}</div><div class="label">Documents</div></div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h2>Recent Patients</h2>
+        {% if patients %}
+        <table>
+            <tr><th>ID</th><th>Name</th><th>Email</th><th>Credits</th><th>Joined</th></tr>
+            {% for p in patients %}
+            <tr>
+                <td style="font-size:11px;color:var(--muted)">{{ p.patient_id[:12] }}...</td>
+                <td>{{ p.first_name }} {{ p.last_name }}</td>
+                <td>{{ p.email }}</td>
+                <td><span class="badge badge-blue">{{ p.credits or 0 }}</span></td>
+                <td style="font-size:11px;color:var(--muted)">{{ p.created_at[:10] if p.created_at else '' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="empty">No patients yet</div>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h2>Recent Appointments</h2>
+        {% if appointments %}
+        <table>
+            <tr><th>Patient</th><th>Status</th><th>Duration</th><th>Booked</th></tr>
+            {% for a in appointments %}
+            <tr>
+                <td style="font-size:12px">{{ a.first_name }} {{ a.last_name }}</td>
+                <td><span class="badge {% if a.status=='completed' %}badge-green{% elif a.status=='in_progress' %}badge-yellow{% elif a.status=='cancelled' %}badge-red{% else %}badge-blue{% endif %}">{{ a.status }}</span></td>
+                <td>{{ a.duration_minutes }}min</td>
+                <td style="font-size:11px;color:var(--muted)">{{ a.booked_at[:10] if a.booked_at else '' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="empty">No appointments yet</div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function loadStats(){}
+</script>
+</body>
+</html>

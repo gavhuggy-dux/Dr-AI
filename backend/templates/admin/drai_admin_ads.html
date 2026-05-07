@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Dr. AI - Ads</title>
+<style>
+:root{--bg:#0a0e14;--card:#131820;--border:#1e2736;--text:#bfc7d4;--muted:#5c6778;--green:#7ecb6b;--red:#f07178;--blue:#5ccfe6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px;line-height:1.5}
+a{color:var(--blue);text-decoration:none}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:20px}
+header h1{font-size:20px;color:var(--blue)}
+header .nav{display:flex;gap:10px;font-size:13px}
+header .nav a{padding:4px 10px;border-radius:4px;background:var(--card);border:1px solid var(--border)}
+header .nav a:hover{border-color:var(--blue);text-decoration:none}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px}
+.card h2{font-size:15px;margin-bottom:12px;color:var(--blue)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase}
+tr:hover{background:rgba(92,207,230,.05)}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px}
+.badge-green{background:rgba(126,203,107,.15);color:var(--green)}
+.badge-red{background:rgba(240,113,120,.15);color:var(--red)}
+.badge-blue{background:rgba(92,207,230,.15);color:var(--blue)}
+.btn{display:inline-block;padding:6px 14px;border-radius:5px;font-size:12px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer}
+.btn:hover{border-color:var(--blue)}
+.btn-primary{background:var(--blue);color:var(--bg);border-color:var(--blue);font-weight:600}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-danger{background:var(--red);color:#fff;border-color:var(--red)}
+input,select,textarea{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:4px;font-size:13px;width:100%}
+input:focus{outline:none;border-color:var(--blue)}
+.form-group{margin-bottom:10px}
+.form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.flash{background:rgba(126,203,107,.1);border:1px solid var(--green);color:var(--green);padding:8px 12px;border-radius:4px;margin-bottom:12px;font-size:13px}
+.empty{text-align:center;color:var(--muted);padding:30px}
+.ad-preview{width:60px;height:60px;object-fit:cover;border-radius:4px;background:var(--bg)}
+@media(max-width:600px){.form-row,.form-row-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+    <h1>📺 Ads Management</h1>
+    <div class="nav">
+        <a href="/admin">Dashboard</a><a href="/admin/packages">Packages</a><a href="/admin/ads">Ads</a>
+        <a href="/admin/tickers">Tickers</a><a href="/admin/appointments">Appts</a>
+        <a href="/admin/settings">Settings</a><a href="/admin/patients">Patients</a><a href="/logout">Logout</a>
+    </div>
+</header>
+
+{% if msg %}<div class="flash">{{ msg }}</div>{% endif %}
+
+<div class="card">
+    <h2>Add Ad</h2>
+    <form method="post" enctype="multipart/form-data">
+        <div class="form-row-3">
+            <div class="form-group"><label>Name</label><input name="name" required></div>
+            <div class="form-group"><label>Image URL</label><input name="image_url" placeholder="https://..."></div>
+            <div class="form-group"><label>Link URL</label><input name="link_url" placeholder="https://..."></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Alt Text</label><input name="alt_text"></div>
+            <div class="form-group"><label>Display Duration (sec)</label><input name="display_duration_seconds" type="number" value="10"></div>
+        </div>
+        <button class="btn btn-primary">Add Ad</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Active Ads</h2>
+    {% if ads %}
+    <table>
+        <tr><th></th><th>Name</th><th>URL</th><th>Duration</th><th>Impressions</th><th>Clicks</th><th>Active</th><th></th></tr>
+        {% for a in ads %}
+        <tr>
+            <td>{% if a.image_url %}<img src="{{ a.image_url }}" class="ad-preview" alt="">{% else %}📷{% endif %}</td>
+            <td>{{ a.name }}</td>
+            <td style="font-size:11px;color:var(--muted)">{{ a.link_url[:30] if a.link_url else '-' }}</td>
+            <td>{{ a.display_duration_seconds }}s</td>
+            <td><span class="badge badge-blue">{{ a.impressions }}</span></td>
+            <td><span class="badge badge-blue">{{ a.clicks }}</span></td>
+            <td><span class="badge {% if a.active %}badge-green{% else %}badge-red{% endif %}">{{ 'Active' if a.active else 'Inactive' }}</span></td>
+            <td>
+                <form method="post" action="/admin/ads/toggle/{{ a.id }}" style="display:inline">
+                    <button class="btn btn-sm">{{ 'Deactivate' if a.active else 'Activate' }}</button>
+                </form>
+                <form method="post" action="/admin/ads/delete/{{ a.id }}" style="display:inline" onsubmit="return confirm('Delete?')">
+                    <button class="btn btn-sm btn-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}<div class="empty">No ads yet. Add one above.</div>{% endif %}
+</div>
+</body>
+</html>
